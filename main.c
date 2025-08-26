@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h> // For drawing text later
@@ -26,7 +27,7 @@
 #define CUSHION_WIDTH 25
 
 // Physics constants
-#define FRICTION 0.992f  // Slightly lower friction for smoother ball rolls
+#define FRICTION 0.99f   // Slightly higher friction to slow balls a bit more
 #define CUE_POWER_MULTIPLIER 0.15f
 #define MIN_VELOCITY 0.1f
 
@@ -417,7 +418,7 @@ void draw_ball(Ball* ball) {
         for (int h = -BALL_RADIUS; h <= BALL_RADIUS; ++h) {
             if (w * w + h * h <= BALL_RADIUS * BALL_RADIUS) {
                 SDL_Color color = ball->color;
-                if (ball->id > 8 && fabs(h) < BALL_RADIUS * 0.3f) {
+                if (ball->id > 8 && abs(h) < BALL_RADIUS * 0.3f) {
                     color = (SDL_Color){255, 255, 255, 255};
                 }
 
