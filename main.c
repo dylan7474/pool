@@ -70,6 +70,7 @@ bool gGameIsRunning = true;
 // --- Function Prototypes ---
 bool initialize();
 void setup_table();
+void reset_game();
 void game_loop();
 void handle_input(SDL_Event* e);
 void update();
@@ -110,7 +111,7 @@ bool initialize() {
     }
 
 
-    setup_table();
+    reset_game();
     return true;
 }
 
@@ -178,6 +179,14 @@ void setup_table() {
 }
 
 /**
+ * @brief Resets the table and game state to their initial values.
+ */
+void reset_game() {
+    setup_table();
+    gCurrentState = STATE_AIMING;
+}
+
+/**
  * @brief The main game loop. Runs until the user quits.
  */
 void game_loop() {
@@ -197,6 +206,17 @@ void handle_input(SDL_Event* e) {
     while (SDL_PollEvent(e) != 0) {
         if (e->type == SDL_QUIT) {
             gGameIsRunning = false;
+        }
+
+        if (e->type == SDL_KEYDOWN) {
+            switch (e->key.keysym.sym) {
+                case SDLK_ESCAPE:
+                    gGameIsRunning = false;
+                    break;
+                case SDLK_r:
+                    reset_game();
+                    break;
+            }
         }
 
         // Handle aiming and shooting
