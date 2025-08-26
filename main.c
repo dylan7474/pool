@@ -26,7 +26,7 @@
 #define CUSHION_WIDTH 25
 
 // Physics constants
-#define FRICTION 0.98f
+#define FRICTION 0.992f  // Slightly lower friction for smoother ball rolls
 #define CUE_POWER_MULTIPLIER 0.15f
 #define MIN_VELOCITY 0.1f
 
