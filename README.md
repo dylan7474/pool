@@ -28,7 +28,8 @@ make -f Makefile.win
 
 ## Controls
 
-* **Arrow keys** – move the player
+* **Mouse** – aim and shoot (click to strike the cue ball)
+* **R** – reset the table
 * **Esc** – quit the application
 
 ## Roadmap
