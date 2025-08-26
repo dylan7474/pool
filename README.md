@@ -10,6 +10,9 @@ Run the configuration script to verify required tools and libraries:
 ./configure
 ```
 
+The script checks for the tools needed to build the Linux version and warns
+if optional components like the MinGW cross-compiler are missing.
+
 ### Linux
 
 Build the native Linux binary using GNU Make:

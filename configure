@@ -10,14 +10,21 @@ check() {
   fi
 }
 
+check_optional() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Optional tool not found: $1"
+    echo "  Install hint: sudo apt-get install $2" >&2
+  fi
+}
+
 check make make
 check gcc build-essential
 check sdl2-config libsdl2-dev
-check x86_64-w64-mingw32-gcc mingw-w64
+check_optional x86_64-w64-mingw32-gcc mingw-w64
 
 if [ $missing -eq 0 ]; then
   echo "All required build tools found."
 else
-  echo "One or more build tools are missing." >&2
+  echo "One or more required build tools are missing." >&2
   exit 1
 fi

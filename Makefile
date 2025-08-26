@@ -9,16 +9,17 @@ TARGET = pool_game
 SRCS = main.c
 
 # Compiler flags:
-# -Wall: Enable all warnings
+# -std=c11: Use the C11 standard
+# -Wall -Wextra: Enable additional warnings
 # -O2: Optimization level 2
 # `sdl2-config --cflags`: Get the include paths for SDL2
-CFLAGS = -Wall -O2 `sdl2-config --cflags`
+CFLAGS = -std=c11 -Wall -Wextra -O2 $(shell sdl2-config --cflags)
 
 # Linker flags:
 # `sdl2-config --libs`: Get the library paths and base SDL2 library
 # -lSDL2_ttf: Link against the SDL2_ttf library for text rendering
 # -lm: Link against the math library (for sqrt, etc.)
-LDFLAGS = `sdl2-config --libs` -lSDL2_ttf -lm
+LDFLAGS = $(shell sdl2-config --libs) -lSDL2_ttf -lm
 
 # Default target: build the executable
 all: $(TARGET)

@@ -60,22 +60,22 @@ typedef enum {
 } GameState;
 
 // --- Global Variables ---
-SDL_Window* gWindow = NULL;
-SDL_Renderer* gRenderer = NULL;
-Ball gBalls[NUM_BALLS];
-Pocket gPockets[6];
-GameState gCurrentState = STATE_AIMING;
-bool gGameIsRunning = true;
+static SDL_Window* gWindow = NULL;
+static SDL_Renderer* gRenderer = NULL;
+static Ball gBalls[NUM_BALLS];
+static Pocket gPockets[6];
+static GameState gCurrentState = STATE_AIMING;
+static bool gGameIsRunning = true;
 
 // --- Function Prototypes ---
-bool initialize();
-void setup_table();
-void game_loop();
-void handle_input(SDL_Event* e);
-void update();
-void render();
-void cleanup();
-void draw_circle(int centerX, int centerY, int radius, SDL_Color color);
+static bool initialize(void);
+static void setup_table(void);
+static void game_loop(void);
+static void handle_input(SDL_Event* e);
+static void update(void);
+static void render(void);
+static void cleanup(void);
+static void draw_circle(int centerX, int centerY, int radius, SDL_Color color);
 
 
 // --- Function Implementations ---
@@ -84,7 +84,7 @@ void draw_circle(int centerX, int centerY, int radius, SDL_Color color);
  * @brief Initializes SDL, creates the window and renderer.
  * @return true on success, false on failure.
  */
-bool initialize() {
+static bool initialize(void) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return false;
@@ -99,6 +99,8 @@ bool initialize() {
     gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (gRenderer == NULL) {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(gWindow);
+        gWindow = NULL;
         return false;
     }
 
@@ -117,7 +119,7 @@ bool initialize() {
  * @brief Sets the initial positions of the balls in a standard 8-ball rack.
  * Also defines pocket locations.
  */
-void setup_table() {
+static void setup_table(void) {
     // Ball colors
     SDL_Color colors[NUM_BALLS] = {
         {255, 255, 255, 255}, // 0: Cue ball
@@ -179,12 +181,13 @@ void setup_table() {
 /**
  * @brief The main game loop. Runs until the user quits.
  */
-void game_loop() {
+static void game_loop(void) {
     SDL_Event e;
     while (gGameIsRunning) {
         handle_input(&e);
         update();
         render();
+        SDL_Delay(16); // ~60 FPS
     }
 }
 
@@ -192,7 +195,7 @@ void game_loop() {
  * @brief Handles all user input (mouse and keyboard).
  * @param e Pointer to the SDL_Event structure.
  */
-void handle_input(SDL_Event* e) {
+static void handle_input(SDL_Event* e) {
     while (SDL_PollEvent(e) != 0) {
         if (e->type == SDL_QUIT) {
             gGameIsRunning = false;
@@ -221,12 +224,18 @@ void handle_input(SDL_Event* e) {
 /**
  * @brief Updates the game state, including physics simulation.
  */
-void update() {
+static void update(void) {
     if (gCurrentState != STATE_SIMULATING) {
         return;
     }
 
     bool ballsAreMoving = false;
+
+    // Precompute table boundaries
+    float tableX1 = (SCREEN_WIDTH - TABLE_WIDTH) / 2.0f + BALL_RADIUS;
+    float tableY1 = (SCREEN_HEIGHT - TABLE_HEIGHT) / 2.0f + BALL_RADIUS;
+    float tableX2 = tableX1 + TABLE_WIDTH - BALL_DIAMETER;
+    float tableY2 = tableY1 + TABLE_HEIGHT - BALL_DIAMETER;
 
     // --- Physics Simulation Step ---
     for (int i = 0; i < NUM_BALLS; ++i) {
@@ -241,7 +250,7 @@ void update() {
         gBalls[i].pos.y += gBalls[i].vel.y;
 
         // 3. Stop balls with very low velocity
-        float speed = sqrt(gBalls[i].vel.x * gBalls[i].vel.x + gBalls[i].vel.y * gBalls[i].vel.y);
+        float speed = sqrtf(gBalls[i].vel.x * gBalls[i].vel.x + gBalls[i].vel.y * gBalls[i].vel.y);
         if (speed < MIN_VELOCITY) {
             gBalls[i].vel = (Vec2D){0, 0};
         } else {
@@ -249,11 +258,6 @@ void update() {
         }
 
         // 4. Handle collision with cushions
-        float tableX1 = (SCREEN_WIDTH - TABLE_WIDTH) / 2.0f + BALL_RADIUS;
-        float tableY1 = (SCREEN_HEIGHT - TABLE_HEIGHT) / 2.0f + BALL_RADIUS;
-        float tableX2 = tableX1 + TABLE_WIDTH - BALL_DIAMETER;
-        float tableY2 = tableY1 + TABLE_HEIGHT - BALL_DIAMETER;
-
         if (gBalls[i].pos.x < tableX1) { gBalls[i].pos.x = tableX1; gBalls[i].vel.x *= -1; }
         if (gBalls[i].pos.x > tableX2) { gBalls[i].pos.x = tableX2; gBalls[i].vel.x *= -1; }
         if (gBalls[i].pos.y < tableY1) { gBalls[i].pos.y = tableY1; gBalls[i].vel.y *= -1; }
@@ -268,7 +272,7 @@ void update() {
             float distSq = dx * dx + dy * dy;
 
             if (distSq < BALL_DIAMETER * BALL_DIAMETER) {
-                float dist = sqrt(distSq);
+            float dist = sqrtf(distSq);
                 float overlap = (BALL_DIAMETER - dist) / 2.0f;
 
                 // Static resolution (move balls apart)
@@ -297,7 +301,7 @@ void update() {
         for (int p = 0; p < 6; ++p) {
             float dx = gPockets[p].pos.x - gBalls[i].pos.x;
             float dy = gPockets[p].pos.y - gBalls[i].pos.y;
-            float dist = sqrt(dx * dx + dy * dy);
+            float dist = sqrtf(dx * dx + dy * dy);
             if (dist < POCKET_RADIUS) {
                 gBalls[i].isActive = false;
                 // Simple game over logic
@@ -318,7 +322,7 @@ void update() {
 /**
  * @brief Renders all game objects to the screen.
  */
-void render() {
+static void render(void) {
     // --- Clear screen (brown background) ---
     SDL_SetRenderDrawColor(gRenderer, 50, 25, 0, 255);
     SDL_RenderClear(gRenderer);
@@ -345,7 +349,8 @@ void render() {
             draw_circle(gBalls[i].pos.x, gBalls[i].pos.y, BALL_RADIUS, gBalls[i].color);
             // Draw stripe for balls 9-15
             if (gBalls[i].id > 8) {
-                draw_circle(gBalls[i].pos.x, gBalls[i].pos.y, BALL_RADIUS * 0.6, (SDL_Color){255, 255, 255, 255});
+                int stripeRadius = (int)(BALL_RADIUS * 0.6f);
+                draw_circle(gBalls[i].pos.x, gBalls[i].pos.y, stripeRadius, (SDL_Color){255, 255, 255, 255});
             }
         }
     }
@@ -375,7 +380,7 @@ void render() {
 /**
  * @brief Cleans up SDL resources.
  */
-void cleanup() {
+static void cleanup(void) {
     SDL_DestroyRenderer(gRenderer);
     SDL_DestroyWindow(gWindow);
     gWindow = NULL;
@@ -393,7 +398,7 @@ void cleanup() {
  * @param radius The radius of the circle.
  * @param color The color of the circle.
  */
-void draw_circle(int centerX, int centerY, int radius, SDL_Color color) {
+static void draw_circle(int centerX, int centerY, int radius, SDL_Color color) {
     SDL_SetRenderDrawColor(gRenderer, color.r, color.g, color.b, color.a);
     for (int w = 0; w < radius * 2; w++) {
         for (int h = 0; h < radius * 2; h++) {
@@ -408,7 +413,7 @@ void draw_circle(int centerX, int centerY, int radius, SDL_Color color) {
 
 
 // --- Main Entry Point ---
-int main(int argc, char* args[]) {
+int main(void) {
     if (!initialize()) {
         printf("Failed to initialize!\n");
     } else {
