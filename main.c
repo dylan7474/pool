@@ -19,16 +19,16 @@
 #define SCREEN_HEIGHT 500
 #define TABLE_WIDTH 900
 #define TABLE_HEIGHT 450
-#define BALL_RADIUS 10
+#define BALL_RADIUS 15
 #define BALL_DIAMETER (BALL_RADIUS * 2)
 #define NUM_BALLS 16
-#define POCKET_RADIUS 18
+#define POCKET_RADIUS 30
 #define CUSHION_WIDTH 25
 
 // Physics constants
-#define FRICTION 0.995f
+#define FRICTION 0.98f
 #define CUE_POWER_MULTIPLIER 0.15f
-#define MIN_VELOCITY 0.05f
+#define MIN_VELOCITY 0.1f
 
 // --- Data Structures ---
 
@@ -75,6 +75,7 @@ void handle_input(SDL_Event* e);
 void update();
 void render();
 void cleanup();
+void draw_ball(Ball* ball);
 void draw_circle(int centerX, int centerY, int radius, SDL_Color color);
 
 
@@ -342,11 +343,7 @@ void render() {
     // --- Draw balls ---
     for (int i = 0; i < NUM_BALLS; ++i) {
         if (gBalls[i].isActive) {
-            draw_circle(gBalls[i].pos.x, gBalls[i].pos.y, BALL_RADIUS, gBalls[i].color);
-            // Draw stripe for balls 9-15
-            if (gBalls[i].id > 8) {
-                draw_circle(gBalls[i].pos.x, gBalls[i].pos.y, BALL_RADIUS * 0.6, (SDL_Color){255, 255, 255, 255});
-            }
+            draw_ball(&gBalls[i]);
         }
     }
 
@@ -383,6 +380,32 @@ void cleanup() {
 
     TTF_Quit();
     SDL_Quit();
+}
+
+/**
+ * @brief Draws a pool ball with an outline and optional stripe.
+ * @param ball Pointer to the ball to render.
+ */
+void draw_ball(Ball* ball) {
+    int cx = (int)ball->pos.x;
+    int cy = (int)ball->pos.y;
+
+    // Outline for better visibility
+    draw_circle(cx, cy, BALL_RADIUS + 2, (SDL_Color){0, 0, 0, 255});
+
+    for (int w = -BALL_RADIUS; w <= BALL_RADIUS; ++w) {
+        for (int h = -BALL_RADIUS; h <= BALL_RADIUS; ++h) {
+            if (w * w + h * h <= BALL_RADIUS * BALL_RADIUS) {
+                SDL_Color color = ball->color;
+                if (ball->id > 8 && fabs(h) < BALL_RADIUS * 0.3f) {
+                    color = (SDL_Color){255, 255, 255, 255};
+                }
+
+                SDL_SetRenderDrawColor(gRenderer, color.r, color.g, color.b, color.a);
+                SDL_RenderDrawPoint(gRenderer, cx + w, cy + h);
+            }
+        }
+    }
 }
 
 
